@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>音乐信息展示</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .music-card {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .music-info {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .music-cover {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .music-cover img {
+            width: 150px;
+            height: auto;
+            border-radius: 5px;
+        }
+        .lyrics-list {
+            margin-top: 20px;
+            font-size: 0.9em;
+            color: #555;
+        }
+        .lyrics-list p {
+            margin: 5px 0;
+        }
+        .play-button {
+            display: block;
+            background-color: #1db954;
+            color: white;
+            text-align: center;
+            padding: 10px;
+            border-radius: 5px;
+            text-decoration: none;
+            margin-top: 15px;
+        }
+        .play-button:hover {
+            background-color: #1ed760;
+        }
+    </style>
+</head>
+<body>
+    <div class="music-card">
+        <div class="music-cover">
+            <img id="music-cover" src="" alt="音乐封面">
+        </div>
+        <div class="music-info" id="music-info">
+            <!-- 音乐信息将在这里动态渲染 -->
+        </div>
+        <div class="lyrics-list" id="lyrics-list">
+            <!-- 歌词将在这里动态渲染 -->
+        </div>
+        <a href="#" class="play-button" id="play-button">播放音乐</a>
+    </div>
+
+    <script>
+        // 定义 API URL
+        const apiUrl = 'https://api.jkyai.top/API/yyjhss.php?id=2131361618&type=wy';
+
+        // 获取 DOM 元素
+        const musicInfoElement = document.getElementById('music-info');
+        const lyricsListElement = document.getElementById('lyrics-list');
+        const musicCoverElement = document.getElementById('music-cover');
+        const playButtonElement = document.getElementById('play-button');
+
+        // 获取音乐数据
+        async function fetchMusicData() {
+            try {
+                const response = await fetch(apiUrl);
+                if (!response.ok) {
+                    throw new Error('网络请求失败');
+                }
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('获取音乐数据失败:', error);
+                alert('获取音乐数据失败，请稍后再试');
+                return null;
+            }
+        }
+
+        // 渲染音乐信息
+        function renderMusicInfo(data) {
+            if (!data || data.code !== 1) {
+                musicInfoElement.innerHTML = '<p>获取音乐信息失败</p>';
+                return;
+            }
+
+            const musicInfo = data.data;
+            
+            // 设置封面
+            musicCoverElement.src = musicInfo.pic;
+            
+            // 创建音乐信息 HTML
+            musicInfoElement.innerHTML = `
+                <h2>${musicInfo.name}</h2>
+                <p><strong>专辑:</strong> ${musicInfo.album}</p>
+                <p><strong>艺术家:</strong> ${musicInfo.artist}</p>
+                <p><strong>图片ID:</strong> ${musicInfo.picid}</p>
+                <p><strong>音频URL:</strong> <a href="${musicInfo.url}" target="_blank">点击打开</a></p>
+            `;
+            
+            // 渲染歌词
+            renderLyrics(musicInfo.lrc);
+            
+            // 设置播放按钮
+            playButtonElement.href = musicInfo.url;
+            playButtonElement.target = '_blank';
+            playButtonElement.innerHTML = '播放音乐';
+        }
+
+        // 渲染歌词
+        function renderLyrics(lyricsText) {
+            if (!lyricsText) {
+                lyricsListElement.innerHTML = '<p>无歌词信息</p>';
+                return;
+            }
+
+            // 将歌词按换行符分割成数组
+            const lyricsLines = lyricsText.split('\n');
+            
+            // 生成歌词 HTML
+            const lyricsHtml = lyricsLines.map(line => {
+                return `<p>${line}</p>`;
+            }).join('');
+            
+            lyricsListElement.innerHTML = `<h3>歌词:</h3>${lyricsHtml}`;
+        }
+
+        // 页面加载完成后执行
+        document.addEventListener('DOMContentLoaded', async () => {
+            const musicData = await fetchMusicData();
+            if (musicData) {
+                renderMusicInfo(musicData);
+            }
+        });
+    </script>
+</body>
+</html>

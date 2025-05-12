@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>随机视频播放器</title>
+	<script src="https://cdn.tailwindcss.com"></script>
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
+	<script>
+		tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#165DFF',
+            secondary: '#FF7D00',
+            dark: '#1E293B',
+            light: '#F8FAFC'
+          },
+          fontFamily: {
+            inter: ['Inter', 'sans-serif'],
+          },
+        },
+      }
+    }
+	</script>
+	<style type="text/tailwindcss">
+		@layer utilities {
+      .content-auto {
+        content-visibility: auto;
+      }
+      .video-container {
+        aspect-ratio: 16/9;
+      }
+      .backdrop-blur-xl {
+        backdrop-filter: blur(24px);
+      }
+      .text-shadow {
+        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+      .hover-scale {
+        transition: transform 0.3s ease;
+      }
+      .hover-scale:hover {
+        transform: scale(1.03);
+      }
+    }
+  </style>
+</head>
+
+<body class="font-inter bg-gradient-to-br from-dark to-gray-900 text-light min-h-screen">
+	<!-- 导航栏 -->
+	<header class="fixed top-0 left-0 right-0 z-50 bg-dark/80 backdrop-blur-xl border-b border-gray-800">
+		<div class="container mx-auto px-4 py-3 flex items-center justify-between">
+			<div class="flex items-center space-x-2">
+				<i class="fa fa-play-circle text-primary text-2xl"></i>
+				<h1 class="text-xl font-bold">随机视频播放器</h1>
+			</div>
+			<button id="refreshBtn" class="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg transition-all duration-300 flex items-center space-x-2">
+        <i class="fa fa-refresh"></i>
+        <span>换一个</span>
+      </button>
+		</div>
+	</header>
+
+	<!-- 主内容区 -->
+	<main class="container mx-auto px-4 pt-24 pb-16">
+		<div id="videoLoader" class="flex justify-center items-center h-[70vh]">
+			<div class="text-center">
+				<div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+				<p class="text-gray-400">正在加载视频...</p>
+			</div>
+		</div>
+
+		<div id="videoContainer" class="hidden">
+			<div class="bg-gray-900 rounded-2xl overflow-hidden shadow-2xl hover-scale mb-6">
+				<video id="videoPlayer" class="w-full video-container object-cover" controls poster=""
+					preload="metadata">
+					您的浏览器不支持视频播放。
+				</video>
+			</div>
+
+			<div class="bg-gray-800/50 backdrop-blur-xl rounded-2xl p-6 shadow-lg">
+				<h2 id="videoTitle" class="text-2xl font-bold mb-2 text-shadow"></h2>
+				<div class="flex items-center mb-4">
+					<div class="flex items-center">
+						<img id="authorAvatar" src="https://picsum.photos/40/40" alt="作者头像" class="w-10 h-10 rounded-full mr-3 object-cover">
+						<span id="videoAuthor" class="text-gray-300"></span>
+					</div>
+				</div>
+				<div class="flex flex-wrap gap-2 mt-4">
+					<button id="playPauseBtn" class="bg-primary hover:bg-primary/90 text-white px-5 py-2 rounded-lg transition-all duration-300 flex items-center space-x-2">
+            <i class="fa fa-play"></i>
+            <span>播放</span>
+          </button>
+					<button id="fullscreenBtn" class="bg-gray-700 hover:bg-gray-600 text-white px-5 py-2 rounded-lg transition-all duration-300 flex items-center space-x-2">
+            <i class="fa fa-expand"></i>
+            <span>全屏</span>
+          </button>
+				</div>
+			</div>
+		</div>
+	</main>
+
+	<!-- 页脚 -->
+	<footer class="bg-dark/80 backdrop-blur-xl border-t border-gray-800 py-6">
+		<div class="container mx-auto px-4 text-center text-gray-400">
+			<p>© 2025 随机视频播放器 | 由豆包编程助手提供技术支持</p>
+		</div>
+	</footer>
+
+	<script>
+		// 使用CORS代理服务
+    const API_URL = 'https://cors-anywhere.herokuapp.com/https://api.lolimi.cn/API/weishi/api.php';
+    
+    // DOM元素
+    const videoContainer = document.getElementById('videoContainer');
+    const videoLoader = document.getElementById('videoLoader');
+    const videoPlayer = document.getElementById('videoPlayer');
+    const videoTitle = document.getElementById('videoTitle');
+    const videoAuthor = document.getElementById('videoAuthor');
+    const authorAvatar = document.getElementById('authorAvatar');
+    const refreshBtn = document.getElementById('refreshBtn');
+    const playPauseBtn = document.getElementById('playPauseBtn');
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
+    
+    // 加载视频函数
+    async function loadVideo() {
+      try {
+        // 显示加载状态
+        videoContainer.classList.add('hidden');
+        videoLoader.classList.remove('hidden');
+        
+        // 调用API获取视频数据
+        const response = await fetch(API_URL);
+        if (!response.ok) {
+          throw new Error('无法获取视频数据');
+        }
+        
+        const data = await response.json();
+        
+        // 检查API返回状态
+        if (data.code !== '1' || !data.data) {
+          throw new Error('API返回错误数据');
+        }
+        
+        // 更新视频内容
+        const videoData = data.data;
+        videoPlayer.src = videoData.url;
+        videoPlayer.poster = videoData.img;
+        videoTitle.textContent = videoData.name;
+        videoAuthor.textContent = videoData.author;
+        authorAvatar.src = videoData.img; // 使用视频封面作为作者头像，实际应用中应替换为真实头像
+        
+        // 显示视频容器
+        videoLoader.classList.add('hidden');
+        videoContainer.classList.remove('hidden');
+        
+        // 视频加载完成后播放
+        await videoPlayer.play().catch(error => {
+          console.error('自动播放失败:', error);
+          // 自动播放失败时更新播放按钮状态
+          playPauseBtn.innerHTML = '<i class="fa fa-play"></i><span>播放</span>';
+        });
+        
+        // 播放成功时更新播放按钮状态
+        playPauseBtn.innerHTML = '<i class="fa fa-pause"></i><span>暂停</span>';
+        
+        console.log('视频加载成功:', videoData);
+      } catch (error) {
+        console.error('加载视频时出错:', error);
+        videoLoader.innerHTML = `
+          <div class="text-center">
+            <i class="fa fa-exclamation-triangle text-red-500 text-4xl mb-4"></i>
+            <p class="text-red-500">加载视频失败: ${error.message}</p>
+            <button id="retryBtn" class="mt-4 bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg transition-all duration-300">
+              重试
+            </button>
+          </div>
+        `;
+        
+        // 添加重试按钮事件
+        document.getElementById('retryBtn').addEventListener('click', loadVideo);
+      }
+    }
+    
+    // 播放/暂停按钮事件
+    playPauseBtn.addEventListener('click', () => {
+      if (videoPlayer.paused) {
+        videoPlayer.play();
+        playPauseBtn.innerHTML = '<i class="fa fa-pause"></i><span>暂停</span>';
+      } else {
+        videoPlayer.pause();
+        playPauseBtn.innerHTML = '<i class="fa fa-play"></i><span>播放</span>';
+      }
+    });
+    
+    // 全屏按钮事件
+    fullscreenBtn.addEventListener('click', () => {
+      if (videoPlayer.requestFullscreen) {
+        videoPlayer.requestFullscreen();
+      } else if (videoPlayer.webkitRequestFullscreen) { /* Safari */
+        videoPlayer.webkitRequestFullscreen();
+      } else if (videoPlayer.msRequestFullscreen) { /* IE11 */
+        videoPlayer.msRequestFullscreen();
+      }
+    });
+    
+    // 视频结束事件
+    videoPlayer.addEventListener('ended', () => {
+      playPauseBtn.innerHTML = '<i class="fa fa-refresh"></i><span>重新播放</span>';
+    });
+    
+    // 刷新按钮事件
+    refreshBtn.addEventListener('click', loadVideo);
+    
+    // 页面加载完成后加载第一个视频
+    window.addEventListener('load', loadVideo);
+	</script>
+</body>
+
+</html>

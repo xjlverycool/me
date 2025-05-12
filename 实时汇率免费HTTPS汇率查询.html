@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>货币汇率查询</title>
+	<script src="https://cdn.tailwindcss.com"></script>
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
+	<script>
+		tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#36CFC9',
+                        neutral: '#F5F7FA',
+                        dark: '#1D2129'
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+	</script>
+	<style type="text/tailwindcss">
+		@layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .card-hover {
+                transition: all 0.3s ease;
+            }
+            .card-hover:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            }
+            .input-focus {
+                @apply focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200;
+            }
+            .btn-hover {
+                @apply hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200;
+            }
+        }
+    </style>
+</head>
+
+<body class="font-inter bg-gradient-to-br from-neutral to-white min-h-screen flex flex-col">
+	<!-- 导航栏 -->
+	<header class="bg-white shadow-md sticky top-0 z-50 transition-all duration-300">
+		<div class="container mx-auto px-4 py-3 flex justify-between items-center">
+			<div class="flex items-center space-x-2">
+				<i class="fa-solid fa-money-bill-wave text-primary text-xl"></i>
+				<h1 class="text-xl font-bold text-dark">汇率查询</h1>
+			</div>
+			<nav>
+				<ul class="flex space-x-6">
+					<li><a href="#"
+							class="text-gray-600 hover:text-primary transition-colors duration-200 flex items-center">
+							<i class="fa-solid fa-home mr-1"></i> 首页
+						</a></li>
+					<li><a href="#"
+							class="text-gray-600 hover:text-primary transition-colors duration-200 flex items-center">
+							<i class="fa-solid fa-chart-line mr-1"></i> 汇率趋势
+						</a></li>
+					<li><a href="#"
+							class="text-gray-600 hover:text-primary transition-colors duration-200 flex items-center">
+							<i class="fa-solid fa-info-circle mr-1"></i> 帮助
+						</a></li>
+				</ul>
+			</nav>
+		</div>
+	</header>
+
+	<!-- 主要内容区 -->
+	<main class="flex-grow container mx-auto px-4 py-8">
+		<div class="max-w-4xl mx-auto">
+			<!-- 汇率查询卡片 -->
+			<div class="bg-white rounded-2xl shadow-lg p-8 mb-8 card-hover">
+				<h2 class="text-2xl font-bold text-dark mb-6 flex items-center">
+					<i class="fa-solid fa-calculator text-primary mr-2"></i> 汇率查询
+				</h2>
+
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+					<!-- 左侧输入区域 -->
+					<div class="space-y-4">
+						<div>
+							<label for="amount" class="block text-sm font-medium text-gray-700 mb-1">金额</label>
+							<input type="number" id="amount" placeholder="输入金额"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg input-focus" value="1">
+						</div>
+
+						<div class="grid grid-cols-2 gap-4">
+							<div>
+								<label for="fromCurrency" class="block text-sm font-medium text-gray-700 mb-1">源货币</label>
+								<select id="fromCurrency"
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg input-focus">
+                                    <option value="USD">美元 (USD)</option>
+                                    <option value="CNY">人民币 (CNY)</option>
+                                    <option value="EUR">欧元 (EUR)</option>
+                                    <option value="JPY">日元 (JPY)</option>
+                                    <option value="GBP">英镑 (GBP)</option>
+                                </select>
+							</div>
+
+							<div>
+								<label for="toCurrency" class="block text-sm font-medium text-gray-700 mb-1">目标货币</label>
+								<select id="toCurrency"
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg input-focus">
+                                    <option value="CNY">人民币 (CNY)</option>
+                                    <option value="USD">美元 (USD)</option>
+                                    <option value="EUR">欧元 (EUR)</option>
+                                    <option value="JPY">日元 (JPY)</option>
+                                    <option value="GBP">英镑 (GBP)</option>
+                                </select>
+							</div>
+						</div>
+
+						<button id="queryBtn"
+                            class="w-full bg-primary hover:bg-primary/90 text-white font-medium py-2.5 px-4 rounded-lg btn-hover flex items-center justify-center">
+                            <i class="fa-solid fa-search mr-2"></i> 查询汇率
+                        </button>
+					</div>
+
+					<!-- 右侧结果区域 -->
+					<div id="resultContainer"
+						class="bg-blue-50 rounded-xl p-6 flex flex-col justify-center items-center hidden">
+						<div class="text-center">
+							<div id="exchangeRate" class="text-3xl font-bold text-primary mb-2">0.00</div>
+							<div id="currencyPair" class="text-gray-600 mb-4">USD/CNY</div>
+
+							<div class="mt-4 p-4 bg-white rounded-lg shadow-sm w-full">
+								<div class="flex justify-between items-center mb-2">
+									<span class="text-gray-600">兑换金额</span>
+									<span id="convertedAmount" class="font-medium">0.00</span>
+								</div>
+								<div class="flex justify-between items-center">
+									<span class="text-gray-600">更新时间</span>
+									<span id="updateTime" class="text-sm text-gray-500">--</span>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- 汇率详情卡片 -->
+			<div id="detailsCard" class="bg-white rounded-2xl shadow-lg p-8 mb-8 card-hover hidden">
+				<h2 class="text-xl font-bold text-dark mb-6 flex items-center">
+					<i class="fa-solid fa-info-circle text-primary mr-2"></i> 汇率详情
+				</h2>
+
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+					<div class="space-y-4">
+						<div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+							<span class="text-gray-600">货币对</span>
+							<span id="pairName" class="font-medium">USD/CNY</span>
+						</div>
+						<div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+							<span class="text-gray-600">货币描述</span>
+							<span id="pairDesc" class="font-medium">美元/人民币</span>
+						</div>
+						<div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+							<span class="text-gray-600">源货币</span>
+							<span id="fromCode" class="font-medium">USD</span>
+						</div>
+					</div>
+					<div class="space-y-4">
+						<div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+							<span class="text-gray-600">目标货币</span>
+							<span id="toCode" class="font-medium">CNY</span>
+						</div>
+						<div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+							<span class="text-gray-600">汇率</span>
+							<span id="rateValue" class="font-medium">0.00</span>
+						</div>
+						<div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+							<span class="text-gray-600">最后更新</span>
+							<span id="lastUpdate" class="font-medium">--</span>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- 最近查询 -->
+			<div class="bg-white rounded-2xl shadow-lg p-8 mb-8">
+				<h2 class="text-xl font-bold text-dark mb-6 flex items-center">
+					<i class="fa-solid fa-history text-primary mr-2"></i> 最近查询
+				</h2>
+
+				<div id="historyList" class="space-y-3">
+					<!-- 历史记录将通过JavaScript动态添加 -->
+					<div class="text-center text-gray-500 py-6">暂无查询记录</div>
+				</div>
+			</div>
+		</div>
+	</main>
+
+	<!-- 页脚 -->
+	<footer class="bg-dark text-white py-8">
+		<div class="container mx-auto px-4">
+			<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+				<div>
+					<h3 class="text-lg font-bold mb-4">汇率查询</h3>
+					<p class="text-gray-400">提供实时货币兑换率查询服务，数据来源可靠，更新及时。</p>
+				</div>
+				<div>
+					<h3 class="text-lg font-bold mb-4">快速链接</h3>
+					<ul class="space-y-2">
+						<li><a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">首页</a>
+						</li>
+						<li><a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">汇率趋势</a>
+						</li>
+						<li><a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">帮助中心</a>
+						</li>
+					</ul>
+				</div>
+				<div>
+					<h3 class="text-lg font-bold mb-4">联系我们</h3>
+					<ul class="space-y-2">
+						<li class="flex items-center">
+							<i class="fa-solid fa-envelope text-primary mr-2"></i>
+							<a href="mailto:contact@currency.com"
+								class="text-gray-400 hover:text-white transition-colors duration-200">contact@currency.com</a>
+						</li>
+						<li class="flex items-center">
+							<i class="fa-solid fa-phone text-primary mr-2"></i>
+							<span class="text-gray-400">+86 123 4567 8910</span>
+						</li>
+					</ul>
+				</div>
+			</div>
+			<div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-500">
+				<p>© 2023 汇率查询. 保留所有权利.</p>
+			</div>
+		</div>
+	</footer>
+
+	<script>
+		// API配置
+        const API_CONFIG = {
+            baseUrl: 'https://www.mxnzp.com/api/exchange_rate/aim',
+            appId: 'kprvcnpjprpikqpi',
+            appSecret: '2J4I2M5ylh2dkqi8UzFQifZGhbF9v2ek'
+        };
+        
+        // 历史记录管理
+        const HistoryManager = {
+            // 获取历史记录
+            get() {
+                const history = localStorage.getItem('currencyHistory');
+                return history ? JSON.parse(history) : [];
+            },
+            
+            // 添加历史记录
+            add(record) {
+                const history = this.get();
+                // 检查是否已有相同的记录，如果有则移除
+                const index = history.findIndex(h => 
+                    h.from === record.from && h.to === record.to
+                );
+                if (index !== -1) {
+                    history.splice(index, 1);
+                }
+                // 添加到历史记录开头
+                history.unshift(record);
+                // 限制最多10条记录
+                if (history.length > 10) {
+                    history.pop();
+                }
+                // 保存到localStorage
+                localStorage.setItem('currencyHistory', JSON.stringify(history));
+                // 更新历史记录UI
+                this.updateUI();
+            },
+            
+            // 更新历史记录UI
+            updateUI() {
+                const historyList = document.getElementById('historyList');
+                const history = this.get();
+                
+                if (history.length === 0) {
+                    historyList.innerHTML = '<div class="text-center text-gray-500 py-6">暂无查询记录</div>';
+                    return;
+                }
+                
+                historyList.innerHTML = '';
+                history.forEach(record => {
+                    const item = document.createElement('div');
+                    item.className = 'p-4 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors duration-200 flex justify-between items-center';
+                    item.innerHTML = `
+                        <div>
+                            <div class="font-medium">${record.from}/${record.to}</div>
+                            <div class="text-sm text-gray-500">${record.time}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-medium">${record.rate}</div>
+                            <div class="text-sm text-primary cursor-pointer" data-from="${record.from}" data-to="${record.to}">
+                                <i class="fa-solid fa-repeat mr-1"></i> 再次查询
+                            </div>
+                        </div>
+                    `;
+                    historyList.appendChild(item);
+                    
+                    // 绑定再次查询事件
+                    item.querySelector('.text-primary').addEventListener('click', function() {
+                        const from = this.getAttribute('data-from');
+                        const to = this.getAttribute('data-to');
+                        document.getElementById('fromCurrency').value = from;
+                        document.getElementById('toCurrency').value = to;
+                        document.getElementById('queryBtn').click();
+                    });
+                });
+            }
+        };
+        
+        // 查询汇率
+        async function queryExchangeRate() {
+            const amount = parseFloat(document.getElementById('amount').value) || 1;
+            const fromCurrency = document.getElementById('fromCurrency').value;
+            const toCurrency = document.getElementById('toCurrency').value;
+            
+            // 显示加载状态
+            document.getElementById('queryBtn').innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> 查询中...';
+            document.getElementById('queryBtn').disabled = true;
+            
+            try {
+                // 构建API请求URL
+                const url = `${API_CONFIG.baseUrl}?from=${fromCurrency}&to=${toCurrency}&app_id=${API_CONFIG.appId}&app_secret=${API_CONFIG.appSecret}`;
+                
+                // 发送请求
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.code === 1) {
+                    // 显示结果
+                    displayResult(data.data, amount);
+                    
+                    // 添加到历史记录
+                    HistoryManager.add({
+                        from: fromCurrency,
+                        to: toCurrency,
+                        rate: data.data.price,
+                        time: new Date().toLocaleString()
+                    });
+                } else {
+                    alert(`查询失败: ${data.msg}`);
+                }
+            } catch (error) {
+                console.error('API请求出错:', error);
+                alert('网络请求出错，请稍后再试');
+            } finally {
+                // 恢复按钮状态
+                document.getElementById('queryBtn').innerHTML = '<i class="fa-solid fa-search mr-2"></i> 查询汇率';
+                document.getElementById('queryBtn').disabled = false;
+            }
+        }
+        
+        // 显示查询结果
+        function displayResult(data, amount) {
+            // 显示结果容器
+            document.getElementById('resultContainer').classList.remove('hidden');
+            document.getElementById('detailsCard').classList.remove('hidden');
+            
+            // 更新基本结果
+            document.getElementById('exchangeRate').textContent = `1 ${data.from} = ${data.price} ${data.to}`;
+            document.getElementById('currencyPair').textContent = `${data.nameDesc}`;
+            
+            // 计算并显示兑换金额
+            const convertedAmount = (amount * parseFloat(data.price)).toFixed(2);
+            document.getElementById('convertedAmount').textContent = `${amount} ${data.from} = ${convertedAmount} ${data.to}`;
+            
+            // 更新详细信息
+            document.getElementById('pairName').textContent = data.name;
+            document.getElementById('pairDesc').textContent = data.nameDesc;
+            document.getElementById('fromCode').textContent = data.from;
+            document.getElementById('toCode').textContent = data.to;
+            document.getElementById('rateValue').textContent = data.price;
+            document.getElementById('lastUpdate').textContent = data.updateTime;
+            document.getElementById('updateTime').textContent = data.updateTime;
+        }
+        
+        // 页面加载时初始化
+        window.addEventListener('DOMContentLoaded', function() {
+            // 绑定查询按钮事件
+            document.getElementById('queryBtn').addEventListener('click', queryExchangeRate);
+            
+            // 绑定回车键查询
+            document.getElementById('amount').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    queryExchangeRate();
+                }
+            });
+            
+            // 加载历史记录
+            HistoryManager.updateUI();
+        });
+	</script>
+</body>
+
+</html>
